@@ -16,12 +16,12 @@ public class TCPServer extends UnicastRemoteObject {
 		if(args.length == 0) {
 			serverNumber = "1";
 			new UDPServer(5000);
-			new UDPClient("localhost", 5001);
+			//new UDPClient("localhost", 5001);
 		}
 		else if(args.length == 1) {
 			serverNumber = args[0];
-			new UDPServer(5001);
-			new UDPClient("localhost", 5000);
+			//new UDPServer(5001);
+			new UDPClient("localhost", 5000, 1000);
 		}
 		else {
 				System.exit(1);

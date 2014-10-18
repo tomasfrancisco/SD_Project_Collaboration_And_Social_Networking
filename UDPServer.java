@@ -2,19 +2,26 @@ import java.net.*;
 import java.io.*;
 
 class UDPServer extends Thread {
+	//Server attributes
 	DatagramSocket link = null;
-	DatagramPacket in;
-	DatagramPacket out;
-	int port;
-
+	int serverPort;
+	String serverId = "s";
 	byte[] buffer;
 
-	UDPServer(int port) {
+	//Server connections
+	DatagramPacket in;
+	DatagramPacket out;	
+
+	UDPServer(int serverPort) {
+		this.serverPort = serverPort;
+		init();
+	}
+
+	private void init() {
 		try {
-			this.port = port;
-			this.link = new DatagramSocket(port);
-			System.out.println("UDPServer is listening at " + port);
-			init();
+			buffer = new byte[2];
+			link = new DatagramSocket(serverPort);
+			System.out.println("UDPServer is listening at " + serverPort);
 			this.start();
 		}
 		catch(SocketException ex) {
@@ -22,31 +29,25 @@ class UDPServer extends Thread {
 		}
 	}
 
-	public void init() {
-		buffer = new byte[2];
+	private void pong() throws InterruptedException, IOException {
+		in = new DatagramPacket(buffer, buffer.length);
+		link.receive(in);	//Blocking
+		buffer = serverId.getBytes();
+		out = new DatagramPacket(buffer, buffer.length, in.getAddress(), in.getPort());
+		link.send(out);
 	}
 
 	public void run() {
 		while(true) {
 			try{
-				Thread.sleep(2000);
-
-				in = new DatagramPacket(buffer, buffer.length);
-				link.receive(in);	//Blocking
-				System.out.println(new String(in.getData(), 0, in.getLength()));
-				buffer = "p".getBytes();
-				out = new DatagramPacket(buffer, buffer.length, in.getAddress(), in.getPort());
-				link.send(out);
+				pong();
+				System.out.println("I'm still the PRINCIPAL server");
 			}	
 			catch(InterruptedException ex) {
 				System.out.println("InterruptedException in UDPClient.run: " + ex.getMessage());	
 			}
 			catch(IOException ex) {
 				System.out.println("IOException in UDPServer.run: " + ex.getMessage());	
-			}
-			finally {
-				if(link != null)
-					link.close();
 			}
 		}
 		

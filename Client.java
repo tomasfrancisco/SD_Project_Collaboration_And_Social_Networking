@@ -1,7 +1,6 @@
-import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
@@ -14,31 +13,20 @@ public class Client {
 	static int clientTry = 0;
 	static int attemptsLimit = 3;
 	static boolean primary = true;
-	
-	static TCPConnections connection;
+	static Thread send = null;
+	static Thread receive = null;
 	
 	public static void getCommunications(Socket socket) throws IOException, Exception, EOFException {
 		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-		//ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+		send = new SendTCP(out);
+		receive = new ReceiveTCP(in);
 		
-		String texto = "";
-	    InputStreamReader input = new InputStreamReader(System.in);
-	    BufferedReader reader = new BufferedReader(input);
-	    System.out.println("Introduza texto:");
-		
-	    // 3o passo
-	    while (true) {
-			// READ STRING FROM KEYBOARD
-		    texto = reader.readLine();
-
-			// WRITE INTO THE SOCKET
-			out.writeUTF(texto);
-			out.flush();
-			System.out.println("Enviado...");
-	    }
+		receive.join();
+		send.interrupt();
 	}
 	
-	public static void getConnections(Socket socket, String serverIP, int port) throws IOException, Exception, EOFException {
+	public static void getConnection(Socket socket, String serverIP, int port) throws IOException, Exception, EOFException {
 		socket = new Socket(serverIP, port);
 		getCommunications(socket);		
 	}
@@ -54,12 +42,12 @@ public class Client {
 				clientTry++;
 				if(primary) {
 					System.out.println("Conneting to Primary...");					
-					getConnections(socket, serverIP, primaryPort);
+					getConnection(socket, serverIP, primaryPort);
 					clientTry = 0;
 				}
 				else {
 					System.out.println("Conneting to Secondary...");
-					getConnections(socket, serverIP, secondaryPort);
+					getConnection(socket, serverIP, secondaryPort);
 					clientTry = 0;
 				}
 			}
@@ -69,7 +57,14 @@ public class Client {
 			catch(IOException ex) {
 				System.out.println("IOException Client.main: " + ex.getMessage());
 				try {
+					//if(send.isAlive())
+						//send.interrupt();
+					if(receive != null && receive.isAlive()) 
+						receive.interrupt();
 					Thread.sleep(1000);
+				}
+				catch(SecurityException SecurityEx) {
+					System.out.println("SecurityException Client.main: " + SecurityEx.getMessage());
 				}
 				catch(InterruptedException threadex) {
 					System.out.println("InterruptedException Client.main: " + threadex.getMessage());

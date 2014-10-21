@@ -25,29 +25,29 @@ public class TCPServer extends UnicastRemoteObject {
 		HashSet<TCPConnections> clients = new HashSet<TCPConnections>();
 		
 		ServerSocket listenSocket = null;
-		try {
-			while(true) {
+		while(true) {
+			try {		
 				listenSocket = new ServerSocket(Integer.parseInt(args[0]));
 				System.out.println("Listening port: " + args[0]);
 				
 				Socket clientSocket = listenSocket.accept();	// Blocking
 				clients.add(new TCPConnections(clientSocket));
 			}
-		}
-		catch(IOException ex) {
-			System.out.println("IOException TCPServer.run: " + ex.getMessage());
-		}
-		catch(Exception ex) {
-			System.out.println("Exception TCPServer.run: " + ex.getMessage());
-		}
-		finally {
-			if(listenSocket != null) {
-				try {
-					listenSocket.close();
+			catch(IOException ex) {
+				System.out.println("IOException TCPServer.run: " + ex.getMessage());
+			}
+			catch(Exception ex) {
+				System.out.println("Exception TCPServer.run: " + ex.getMessage());
+			}
+			finally {
+				if(listenSocket != null) {
+					try {
+						listenSocket.close();
+					}
+					catch(IOException ex) {
+						System.out.println("IOException TCPServer.run: " + ex.getMessage());
+					}				
 				}
-				catch(IOException ex) {
-					System.out.println("IOException TCPServer.run: " + ex.getMessage());
-				}				
 			}
 		}
 	}

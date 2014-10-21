@@ -43,7 +43,6 @@ public class Client {
 		serverIP = "localhost";
 		port = 2000;
 		
-		Socket socket = null;
 		while(true) {
 			try {	
 				clientTry++;
@@ -61,7 +60,7 @@ public class Client {
 			catch(IOException ex) {
 				System.out.println("IOException Client.main: " + ex.getMessage());
 				try {
-					Thread.sleep(500);
+					Thread.sleep(1000);
 				}
 				catch(InterruptedException threadex) {
 					System.out.println("InterruptedException Client.main: " + threadex.getMessage());

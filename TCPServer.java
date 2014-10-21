@@ -1,30 +1,37 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.HashSet;
 
+public class TCPServer extends UnicastRemoteObject {
+	private static final long serialVersionUID = -1580565047933309967L;
 
-class TCPServer extends Thread {
-	int port;
-	HashSet<TCPConnections> clients;
-
-	TCPServer(int port) {
-		this.port = port;
-		init();
+	TCPServer() throws RemoteException {
+		super();
 	}
 
-	private void init() {
-		clients = new HashSet<TCPConnections>();
-		this.start();
-	}
+	public static void main(String args[]) {
 
-	public void run() {
+		/*if(args.length != 0) {
+			new UDPServer(5000);
+		}
+		else {
+			new UDPClient("localhost", 5000, 2000);
+		}
+
+		new RMIClient("localhost", 7000);*/
+		int port = 2000;
+		HashSet<TCPConnections> clients = new HashSet<TCPConnections>();
+		
+		ServerSocket listenSocket = null;
 		try {
-			ServerSocket listenSocket = new ServerSocket(port);
-			System.out.println("Listening port: " + port);
 			while(true) {
+				listenSocket = new ServerSocket(port);
+				System.out.println("Listening port: " + port);
+				
 				Socket clientSocket = listenSocket.accept();	// Blocking
-				System.out.println("Accept");
 				clients.add(new TCPConnections(clientSocket));
 			}
 		}
@@ -33,6 +40,16 @@ class TCPServer extends Thread {
 		}
 		catch(Exception ex) {
 			System.out.println("Exception TCPServer.run: " + ex.getMessage());
+		}
+		finally {
+			if(listenSocket != null) {
+				try {
+					listenSocket.close();
+				}
+				catch(IOException ex) {
+					System.out.println("IOException TCPServer.run: " + ex.getMessage());
+				}				
+			}
 		}
 	}
 }

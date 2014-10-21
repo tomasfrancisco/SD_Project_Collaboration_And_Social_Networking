@@ -1,4 +1,3 @@
-import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -6,6 +5,7 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 class RMIServer extends UnicastRemoteObject implements RMIInterface {
+	private static final long serialVersionUID = -4359562983393030357L;
 	static String serverIP = "localhost";
 	static int port = 7000;
 	static String remoteObjectName = "DataServer";
@@ -28,7 +28,7 @@ class RMIServer extends UnicastRemoteObject implements RMIInterface {
 		try {
 			RMIServer server = new RMIServer();
 			Registry reg = LocateRegistry.createRegistry(port);
-			Naming.rebind("rmi://" + serverIP + ":" + port + "/" + remoteObjectName, server);
+			reg.rebind("rmi://" + serverIP + ":" + port + "/" + remoteObjectName, server);
 			System.out.println("Data Server is ready.");
 		}
 		catch(Exception ex) {

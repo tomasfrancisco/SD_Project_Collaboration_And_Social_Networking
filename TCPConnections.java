@@ -31,21 +31,31 @@ class ReceiveConnection extends Thread {
 			this.start();
 		}
 		catch(IOException ex){
-			System.out.println("IOException TCPServer.ReceiveConnection.init: " + ex.getMessage());
+			System.out.println("IOException TCPConnections.ReceiveConnection.init: " + ex.getMessage());
 		}
 	}
 
 	public void run() {
 		String buffer = "";
-
-		while(true) {
-			try { 
+		try { 
+			while(true) {
 				if(in != null)
 					buffer = in.readUTF();
 				System.out.println("Recebido: " + buffer);
 			}
-			catch(IOException ex) { 
-				System.out.println("IOException TCPServer.ReceiveConnection.run: " + ex.getMessage());
+		}
+		catch(IOException ex) { 
+			System.out.println("IOException TCPConnections.ReceiveConnection.run: " + ex.getMessage());
+		}
+		finally {
+			if(clientSocket != null) {
+				try {
+					in.close();
+					clientSocket.close();
+				}
+				catch(IOException ex) {
+					System.out.println("IOException TCPConnections.ReceiveConnection.run: " + ex.getMessage());
+				}
 			}
 		}
 	}
@@ -77,22 +87,34 @@ class SendConnection extends Thread {
 	}
 
 	public void run() {
-		while(true) {
-			int fifoSize = fifo.size();
-			for(int i = 0; i < fifoSize; i++) {
+		
+		try {
+			while(true) {
+				int fifoSize = fifo.size();
+				for(int i = 0; i < fifoSize; i++) {
+					
+						if(out != null) {
+							// Tenta enviar a info
+							out.writeUTF(fifo.peek());
+							// Se correr bem, retira da fila
+							fifo.poll();
+						}
+				}
+			}
+		}
+		catch(IOException ex) {
+			System.out.println("IOException TCPServer.SendConnection.run: " + ex.getMessage());
+		}
+		finally {
+			if(clientSocket != null) {
 				try {
-					if(out != null) {
-						// Tenta enviar a info
-						out.writeUTF(fifo.peek());
-						// Se correr bem, retira da fila
-						fifo.poll();
-					}
+					out.close();
+					clientSocket.close();
 				}
 				catch(IOException ex) {
-					System.out.println("IOException TCPServer.SendConnection.run: " + ex.getMessage());
-				}				
+					System.out.println("IOException TCPConnections.ReceiveConnection.run: " + ex.getMessage());
+				}
 			}
-			
 		}
 	}
 }

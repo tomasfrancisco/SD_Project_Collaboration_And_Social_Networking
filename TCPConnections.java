@@ -1,6 +1,6 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -18,7 +18,7 @@ public class TCPConnections {
 
 class ReceiveConnection extends Thread {
 	Socket clientSocket;
-	DataInputStream in;
+	ObjectInputStream in;
 
 	ReceiveConnection(Socket clientSocket) {
 		this.clientSocket = clientSocket;
@@ -27,7 +27,7 @@ class ReceiveConnection extends Thread {
 
 	void init() {
 		try {
-			in = new DataInputStream(clientSocket.getInputStream());
+			in = new ObjectInputStream(clientSocket.getInputStream());
 			this.start();
 		}
 		catch(IOException ex){
@@ -63,7 +63,7 @@ class ReceiveConnection extends Thread {
 
 class SendConnection extends Thread {
 	Socket clientSocket;
-	DataOutputStream out;
+	ObjectOutputStream out;
 	ConcurrentLinkedQueue<String> fifo;
 
 	SendConnection(Socket clientSocket) {
@@ -73,7 +73,7 @@ class SendConnection extends Thread {
 
 	void init() {
 		try {
-			out = new DataOutputStream(clientSocket.getOutputStream());
+			out = new ObjectOutputStream(clientSocket.getOutputStream());
 			fifo = new ConcurrentLinkedQueue<String>();
 			this.start();
 		}

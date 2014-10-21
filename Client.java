@@ -1,23 +1,26 @@
 import java.io.BufferedReader;
-import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 
 
 public class Client {
 	
 	static String serverIP;
-	static int port;
+	static int primaryPort;
+	static int secondaryPort;
 	static int clientTry = 0;
 	static int attemptsLimit = 3;
 	static boolean primary = true;
 	
 	static TCPConnections connection;
 	
-	public static void getCommunications(Socket socket) throws IOException, Exception {
-		DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-		//DataInputStream in = new DataInputStream(socket.getInputStream());
+	public static void getCommunications(Socket socket) throws IOException, Exception, EOFException {
+		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 		
 		String texto = "";
 	    InputStreamReader input = new InputStreamReader(System.in);
@@ -31,31 +34,38 @@ public class Client {
 
 			// WRITE INTO THE SOCKET
 			out.writeUTF(texto);
+			out.flush();
+			System.out.println("Enviado...");
 	    }
 	}
 	
-	public static void getConnections(String serverIP, int port) throws IOException, Exception {
-		Socket socket = new Socket(serverIP, port);
+	public static void getConnections(Socket socket, String serverIP, int port) throws IOException, Exception, EOFException {
+		socket = new Socket(serverIP, port);
 		getCommunications(socket);		
 	}
 	
 	public static void main(String args[]) {	
 		serverIP = "localhost";
-		port = 2000;
+		primaryPort = 2000;
+		secondaryPort = 2050;
 		
+		Socket socket = null;
 		while(true) {
 			try {	
 				clientTry++;
 				if(primary) {
 					System.out.println("Conneting to Primary...");					
-					getConnections(serverIP, port);
+					getConnections(socket, serverIP, primaryPort);
 					clientTry = 0;
 				}
 				else {
 					System.out.println("Conneting to Secondary...");
-					getConnections(serverIP, port);
+					getConnections(socket, serverIP, secondaryPort);
 					clientTry = 0;
 				}
+			}
+			catch(EOFException ex) {
+				System.out.println("EOFException Client.main: " + ex.getMessage());
 			}
 			catch(IOException ex) {
 				System.out.println("IOException Client.main: " + ex.getMessage());
@@ -73,6 +83,16 @@ public class Client {
 			} 
 			catch(Exception ex) {
 				System.out.println("Exception Client.main: " + ex.getMessage());
+			}
+			finally {
+				if(socket != null) {
+					try {
+						socket.close();
+					}
+					catch(IOException ex) {
+						System.out.println("IOException Client.main: " + ex.getMessage());
+					}
+				}
 			}
 		}			
 	}

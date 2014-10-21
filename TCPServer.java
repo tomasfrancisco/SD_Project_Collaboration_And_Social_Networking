@@ -22,14 +22,13 @@ public class TCPServer extends UnicastRemoteObject {
 		}
 
 		new RMIClient("localhost", 7000);*/
-		int port = 2000;
 		HashSet<TCPConnections> clients = new HashSet<TCPConnections>();
 		
 		ServerSocket listenSocket = null;
 		try {
 			while(true) {
-				listenSocket = new ServerSocket(port);
-				System.out.println("Listening port: " + port);
+				listenSocket = new ServerSocket(Integer.parseInt(args[0]));
+				System.out.println("Listening port: " + args[0]);
 				
 				Socket clientSocket = listenSocket.accept();	// Blocking
 				clients.add(new TCPConnections(clientSocket));

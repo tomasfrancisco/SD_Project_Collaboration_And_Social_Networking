@@ -2,7 +2,6 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
@@ -20,7 +19,7 @@ public class Client {
 	
 	public static void getCommunications(Socket socket) throws IOException, Exception, EOFException {
 		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+		//ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 		
 		String texto = "";
 	    InputStreamReader input = new InputStreamReader(System.in);

@@ -1,93 +1,102 @@
-import java.io.EOFException;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 
+public class Client extends Thread {
+	private static Socket clientSocket = null;
 
-public class Client {
+	private static ObjectInputStream in = null;
+	private static ObjectOutputStream out = null;
+	private static BufferedReader inputLine = null;
 	
-	static String serverIP;
-	static int primaryPort;
-	static int secondaryPort;
-	static int clientTry = 0;
-	static int attemptsLimit = 3;
-	static boolean primary = true;
-	static Thread send = null;
-	static Thread receive = null;
+	private static int clientTry = 0;
+	private static int attemptsLimit = 3;	
+	private static boolean primary = true;
+	private static String closed = "false";		
 	
-	public static void getCommunications(Socket socket) throws IOException, Exception, EOFException {
-		ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
-		ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
-		send = new SendTCP(out);
-		receive = new ReceiveTCP(in);
-		
-		receive.join();
-		send.interrupt();
+	Client() {
+		this.start();
 	}
 	
-	public static void getConnection(Socket socket, String serverIP, int port) throws IOException, Exception, EOFException {
-		socket = new Socket(serverIP, port);
-		getCommunications(socket);		
-	}
-	
-	public static void main(String args[]) {	
-		serverIP = "localhost";
-		primaryPort = 2000;
-		secondaryPort = 2050;
+	public static void main(String args[]) {		
+		if(args.length != 2) {
+			System.out.println("java Client <host> <port>");
+			System.exit(0);
+		}
 		
-		Socket socket = null;
+		String responseLine;
+		Thread reader = null;
+		
 		while(true) {
-			try {	
+			try {
 				clientTry++;
-				if(primary) {
-					System.out.println("Conneting to Primary...");					
-					getConnection(socket, serverIP, primaryPort);
-					clientTry = 0;
-				}
-				else {
-					System.out.println("Conneting to Secondary...");
-					getConnection(socket, serverIP, secondaryPort);
-					clientTry = 0;
-				}
-			}
-			catch(EOFException ex) {
-				System.out.println("EOFException Client.main: " + ex.getMessage());
-			}
-			catch(IOException ex) {
-				System.out.println("IOException Client.main: " + ex.getMessage());
+				System.out.println("Trying to connect with server...");
+				if(primary)
+					clientSocket = new Socket(args[0], Integer.parseInt(args[1]));
+				else
+					clientSocket = new Socket(args[0], Integer.parseInt(args[1]));
+				
+				out = new ObjectOutputStream(clientSocket.getOutputStream());	
+				in = new ObjectInputStream(clientSocket.getInputStream());
+				
+				inputLine = new BufferedReader(new InputStreamReader(System.in));
+				
+				if(clientSocket != null && out != null && in != null) {
+					try {
+						if(reader != null)
+							synchronized (reader) {
+								reader.notify();
+							}
+						else
+							reader = new Client();
+						synchronized (closed) {
+							closed = "false";
+						}
+						while((responseLine = in.readUTF()) != null) {
+							System.out.println(responseLine);
+						}						
+					}
+					catch(IOException e) {
+						synchronized (closed) {
+							closed = "true";
+						}
+					}
+				}			
+			} catch (NumberFormatException | IOException e) {
 				try {
-					//if(send.isAlive())
-						//send.interrupt();
-					if(receive != null && receive.isAlive()) 
-						receive.interrupt();
 					Thread.sleep(1000);
 				}
-				catch(SecurityException SecurityEx) {
-					System.out.println("SecurityException Client.main: " + SecurityEx.getMessage());
-				}
-				catch(InterruptedException threadex) {
-					System.out.println("InterruptedException Client.main: " + threadex.getMessage());
+				catch(InterruptedException ex) {
+					System.err.println("An error occured");
 				}
 				if(clientTry == attemptsLimit) {
+					System.out.println("Reconnecting to server...");
 					clientTry = 0;
 					primary = !primary;
-					System.out.println(primary);
-				}
-			} 
-			catch(Exception ex) {
-				System.out.println("Exception Client.main: " + ex.getMessage());
-			}
-			finally {
-				if(socket != null) {
-					try {
-						socket.close();
-					}
-					catch(IOException ex) {
-						System.out.println("IOException Client.main: " + ex.getMessage());
-					}
 				}
 			}
 		}			
+	}	
+	
+	public void run() {
+		String responseLine;
+		while(true) {
+			try {				
+				responseLine = inputLine.readLine().trim();
+				synchronized (closed) {
+					if(closed.equals("true"))
+						synchronized (this) {
+							this.wait();
+						}
+				}
+				out.writeUTF(responseLine);
+				out.flush();
+			} catch(IOException | InterruptedException e) {
+				System.err.println("An error accurred");
+			}
+		}
 	}
 }

@@ -13,33 +13,78 @@ public class Server extends UnicastRemoteObject {
 	private static Socket clientSocket = null;
 	private static ServerSocket listenSocket = null;
 	private static HashSet<Connection> connections = new HashSet<Connection>();
+	
+	private static boolean primary = false;
+	
+	private static UDPServer udpServer = null;
+	private static UDPClient udpClient = null;
 
 	Server() throws RemoteException {
 		super();
 	}
 	
-	public static void getClients() throws IOException {
-		while(true) {
-			Socket socket = listenSocket.accept();
-			connections.add(new Connection(socket));
+	public static boolean testExistingServer(String serverAddress, int serverPort, int pingInterval) {
+		int attempt = 0;
+		int attemptLimit = 1;
+		boolean alive = false;
+	
+		UDPClient test = new UDPClient(serverAddress, serverPort, pingInterval)	;
+		while(attempt < attemptLimit) {
+			try {
+				attempt++;
+				System.out.println("(" + attempt + ")" + " Testing if " + serverAddress + " is alive on port " + serverPort);
+				alive = test.ping();
+			} catch (IOException e) {}
 		}
+		return alive;
 	}
 	
-	public static ServerSocket getListener(int port) throws IOException {
-		return new ServerSocket(port);
-	}
-
 	public static void main(String args[]) {
-		if(args.length != 1) {
-			System.out.println("java TCPServer <port>");
-			System.exit(0);
+		String tcpHostname1 = "localhost";
+		int tcpPort1 = 2000;
+		String tcpHostname2 = "localhost";
+		int tcpPort2 = 2100;
+		
+		int udpServerPort = 5000;
+		
+		boolean host1 = false;
+		
+		//Test if some server is up, otherwise will act like primary server
+		if(!(host1 = testExistingServer(tcpHostname1, udpServerPort, 100)) && !testExistingServer(tcpHostname2, udpServerPort, 100)) {
+			primary = true;
 		}
+		
+		udpServer = new UDPServer(udpServerPort);
+		
+		if(primary) {
+			System.out.println("Acting like primary");
+			udpServer.start();
+		}
+		else {
+			if(host1)
+				udpClient = new UDPClient(tcpHostname1, udpServerPort, 500);
+			else
+				udpClient = new UDPClient(tcpHostname2, udpServerPort, 500);
+			try{
+				System.out.println("Acting as backup");
+				udpClient.start();
+				udpClient.join();
+				System.out.println("Acting as server");
+			} catch(InterruptedException e) {
+				e.printStackTrace();
+			}
+			udpServer.start();
+			primary = true;
+		}		
 	
 		try {
-			listenSocket = new ServerSocket(Integer.parseInt(args[0]));
+			if(host1)
+				listenSocket = new ServerSocket(tcpPort2);
+			else
+				listenSocket = new ServerSocket(tcpPort1);
 			
 			while(true) {
-				System.out.println("Listening...");
+				System.out.println("TCPServer is listening at " + listenSocket.getLocalPort());
 				clientSocket = listenSocket.accept();
 				System.out.println(clientSocket.toString());
 				connections.add(new Connection(clientSocket));				
@@ -51,8 +96,7 @@ public class Server extends UnicastRemoteObject {
 	}
 }
 
-class Connection extends Thread {
-	
+class Connection extends Thread {	
 	private static ObjectInputStream in = null;
 	private static ObjectOutputStream out = null;
 	
@@ -75,7 +119,6 @@ class Connection extends Thread {
 			}
 		} catch(IOException e) {
 			System.err.println("Lost connection");
-			//e.printStackTrace();
 		}
 	}
 }

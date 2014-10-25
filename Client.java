@@ -21,11 +21,11 @@ public class Client extends Thread {
 		this.start();
 	}
 	
-	public static void main(String args[]) {		
-		if(args.length != 2) {
-			System.out.println("java Client <host> <port>");
-			System.exit(0);
-		}
+	public static void main(String args[]) {				
+		String tcpHostname1 = "localhost";
+		int tcpPort1 = 2000;
+		String tcpHostname2 = "localhost";
+		int tcpPort2 = 2100;
 		
 		String responseLine;
 		Thread reader = null;
@@ -33,11 +33,11 @@ public class Client extends Thread {
 		while(true) {
 			try {
 				clientTry++;
-				System.out.println("Trying to connect with server...");
+				//System.out.println("Trying to connect with server...");
 				if(primary)
-					clientSocket = new Socket(args[0], Integer.parseInt(args[1]));
+					clientSocket = new Socket(tcpHostname1, tcpPort1);
 				else
-					clientSocket = new Socket(args[0], Integer.parseInt(args[1]));
+					clientSocket = new Socket(tcpHostname2, tcpPort2);
 				
 				out = new ObjectOutputStream(clientSocket.getOutputStream());	
 				in = new ObjectInputStream(clientSocket.getInputStream());
@@ -73,7 +73,7 @@ public class Client extends Thread {
 					System.err.println("An error occured");
 				}
 				if(clientTry == attemptsLimit) {
-					System.out.println("Reconnecting to server...");
+					//System.out.println("Reconnecting to server...");
 					clientTry = 0;
 					primary = !primary;
 				}

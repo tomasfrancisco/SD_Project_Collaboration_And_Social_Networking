@@ -14,40 +14,36 @@ class UDPServer extends Thread {
 
 	UDPServer(int serverPort) {
 		this.serverPort = serverPort;
-		init();
 	}
 
-	private void init() {
+	public void init() {
 		try {
 			buffer = new byte[2];
 			link = new DatagramSocket(serverPort);
 			System.out.println("UDPServer is listening at " + serverPort);
-			this.start();
 		}
 		catch(SocketException ex) {
-			System.out.println("SocketException in UDPServer.run: " + ex.getMessage());
+			ex.printStackTrace();
 		}
 	}
 
 	private void pong() throws InterruptedException, IOException {
 		in = new DatagramPacket(buffer, buffer.length);
-		link.receive(in);	//Blocking
+		link.receive(in);
 		buffer = serverId.getBytes();
 		out = new DatagramPacket(buffer, buffer.length, in.getAddress(), in.getPort());
 		link.send(out);
 	}
 
 	public void run() {
+		init();
 		while(true) {
-			try{
+			try {
 				pong();
-				System.out.println("I'm still the PRINCIPAL server");
+				//Acting as server
 			}	
-			catch(InterruptedException ex) {
-				System.out.println("InterruptedException in UDPClient.run: " + ex.getMessage());	
-			}
-			catch(IOException ex) {
-				System.out.println("IOException in UDPServer.run: " + ex.getMessage());	
+			catch(InterruptedException | IOException ex) {
+				ex.printStackTrace();	
 			}
 		}
 		

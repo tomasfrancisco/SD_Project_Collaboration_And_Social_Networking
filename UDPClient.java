@@ -33,27 +33,20 @@ class UDPClient extends Thread {
 			buffer = new byte[2];
 			link = new DatagramSocket();
 			link.setSoTimeout(5000);
-			this.start();
-		}
-		catch(UnknownHostException ex) {
-			System.out.println("UnknownHostException in UDPClient.init: " + ex.getMessage());
-		}
-		catch(SocketException ex) {
-			System.out.println("SocketException in UDPClient.init: " + ex.getMessage());
-		}			
+		} catch(UnknownHostException | SocketException ex) {
+			ex.printStackTrace();
+		}	
 	}
 
-	private boolean ping() throws SocketTimeoutException, IOException {
+	public boolean ping() throws SocketTimeoutException, IOException {
 		buffer = "s".getBytes();
 		out = new DatagramPacket(buffer, buffer.length, host, serverPort);
 		link.send(out);
 		in = new DatagramPacket(buffer, buffer.length);
 		link.receive(in);
 
-		if(new String(in.getData(), 0, in.getLength()).equals(serverId))
-			return true;
-		else
-			return false;
+		if(new String(in.getData(), 0, in.getLength()).equals(serverId)) return true;
+		else return false;
 	}
 
 	public void run() {
@@ -63,24 +56,16 @@ class UDPClient extends Thread {
 				clientTry++;
 				if(!ping() && clientTry > attemptsLimit) {
 					//Turn this server into principal network server
-					System.out.println("Now I'm the PRINCIPAL server");
 					clientTry = 0;
 				}
-				else 
-					System.out.println("I'm still the SECONDARY server");
-			}
-			catch(SocketTimeoutException ex) {
+			} catch(SocketTimeoutException ex) {
 				if(clientTry > attemptsLimit) {
 					clientTry = 0;
 					//Turn this server into principal network server
-					System.out.println("SocketTimoutException: Now I am the PRINCIPAL server");
+					return;
 				}
-			}
-			catch(InterruptedException ex) {
-				System.out.println("InterruptedException in UDPClient.run: " + ex.getMessage());	
-			}
-			catch(IOException ex) {
-				System.out.println("IOException in UDPClient.run: " + ex.getMessage());	
+			} catch(InterruptedException | IOException ex) {
+				ex.printStackTrace();	
 			}
 		}
 		

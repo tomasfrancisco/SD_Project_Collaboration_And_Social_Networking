@@ -10,18 +10,29 @@ public abstract class Menu {
 		out.flush();
 	}
 	
-	public static void session(ObjectInputStream in, ObjectOutputStream out) throws IOException {
+	public static void session(ObjectInputStream in, ObjectOutputStream out, Session clientSession) throws IOException {
 		String option;
 		
 		sendUTF(out, "1. Login\n"
 				   + "2. Register");
-		option = in.readUTF();	
-		System.out.println(option);
+		clientSession.setLastMenu("session");
+		option = in.readUTF();		
+		switch (option) {
+			case "1":
+				Menu.login(in, out, clientSession);
+				break;
+			case "2":
+				Menu.register(in, out, clientSession);
+				break;
+			default:
+				break;
+		}
 	}
 	
-	public static void login(ObjectInputStream in, ObjectOutputStream out) throws IOException {
+	public static void login(ObjectInputStream in, ObjectOutputStream out, Session clientSession) throws IOException {
 		String username;
 		String password;
+		clientSession.setLastMenu("login");
 		
 		sendUTF(out, "username:");
 		username = in.readUTF();
@@ -29,9 +40,11 @@ public abstract class Menu {
 		sendUTF(out, "password:");
 		password = in.readUTF();		
 		System.out.println(password);
+		System.out.println("Set Login");
+		clientSession.setLastMenu("login");
 	}
 	
-	public static void register(ObjectInputStream in, ObjectOutputStream out) throws IOException {
+	public static void register(ObjectInputStream in, ObjectOutputStream out, Session clientSession) throws IOException {
 		String username;
 		String password;
 		String retypePassword;
@@ -45,6 +58,8 @@ public abstract class Menu {
 		sendUTF(out, "retype password:");
 		retypePassword = in.readUTF();
 		System.out.println(retypePassword);
+		System.out.println("Set Register");
+		clientSession.setLastMenu("register");
 	}
 	
 }

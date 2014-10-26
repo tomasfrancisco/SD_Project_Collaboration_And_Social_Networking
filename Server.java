@@ -18,6 +18,8 @@ public class Server extends UnicastRemoteObject {
 	
 	private static UDPServer udpServer = null;
 	private static UDPClient udpClient = null;
+	
+	private static RMIClient dataServer = null;
 
 	Server() throws RemoteException {
 		super();
@@ -50,9 +52,9 @@ public class Server extends UnicastRemoteObject {
 		boolean host1 = false;
 		
 		//Test if some server is up, otherwise will act like primary server
-		if(!(host1 = testExistingServer(tcpHostname1, udpServerPort, 100)) && !testExistingServer(tcpHostname2, udpServerPort, 100)) {
+		//if(!(host1 = testExistingServer(tcpHostname1, udpServerPort, 100)) && !testExistingServer(tcpHostname2, udpServerPort, 100)) {
 			primary = true;
-		}
+		//}
 		
 		udpServer = new UDPServer(udpServerPort);
 		
@@ -79,8 +81,17 @@ public class Server extends UnicastRemoteObject {
 	
 		try {
 			RMIClient dataServer = new RMIClient("localhost", 7000);
-			System.out.println(dataServer.getSession("localhost"));
-			
+			//System.out.println(dataServer.getSession("localhost"));
+            //dataServer.getUserByID(7);
+            //dataServer.scheduleMeeting(7, "Sopa para todos", "Os problemas da sopa", "Existe um problema que é não haver sopa para todos. Como podemos resolver?", "DEI @ Coimbra", 2014, 10, 30, 10, 30);
+			//dataServer.login("pedro","pedro");
+            //dataServer.register("root","root@root.com","root","Root");
+            //dataServer.inviteToMeeting("root",3);
+            //dataServer.acceptMeetingInvite("root",3);
+            //dataServer.listUpcomingMeetings("root");
+
+
+
 			if(host1)
 				listenSocket = new ServerSocket(tcpPort2);
 			else
@@ -90,7 +101,7 @@ public class Server extends UnicastRemoteObject {
 				System.out.println("TCPServer is listening at " + listenSocket.getLocalPort());
 				clientSocket = listenSocket.accept();
 				System.out.println(clientSocket.toString());
-				connections.add(new Connection(clientSocket));				
+				connections.add(new Connection(clientSocket, dataServer));				
 			}
 		}
 		catch(IOException ex) {
@@ -103,11 +114,17 @@ class Connection extends Thread {
 	private static ObjectInputStream in = null;
 	private static ObjectOutputStream out = null;
 	
-	public Connection(Socket clientSocket) {
+	private static RMIClient dataServer = null;
+	
+	private static String clientAddress;
+	private static Session clientSession = null;
+	
+	public Connection(Socket clientSocket, RMIClient dataServer) {
 		try {
 			in = new ObjectInputStream(clientSocket.getInputStream());
 			out = new ObjectOutputStream(clientSocket.getOutputStream());
-			
+			this.dataServer = dataServer;
+			this.clientAddress = clientSocket.getRemoteSocketAddress().toString();
 			this.start();	
 		} catch(IOException e) {
 			e.printStackTrace();
@@ -117,8 +134,24 @@ class Connection extends Thread {
 	public void run() {
 		try {
 			while(true) {
-				Menu.session(in, out);
-				Menu.login(in, out);
+				synchronized (dataServer) {
+					clientSession = dataServer.getSession(clientAddress.split(":")[0]);
+				}
+				String menu = clientSession.getLastMenu();
+				switch (menu) {
+					case "session":
+						Menu.session(in, out, clientSession);
+						break;
+					case "login":
+						Menu.login(in, out, clientSession);
+						break;
+					case "register":
+						Menu.register(in, out, clientSession);
+						break;
+					default:
+						System.out.println("Menu not found");
+						break;
+				}
 			}
 		} catch(IOException e) {
 			System.err.println("Lost connection");

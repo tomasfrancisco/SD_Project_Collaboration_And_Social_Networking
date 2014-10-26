@@ -6,12 +6,12 @@ public class Session implements Serializable {
 	private static final long serialVersionUID = 1759058792408708534L;
 	private String address;
 	private Date lastCommit;
-	private int lastMenu;
+	private String lastMenu;
 	
 	public Session(String address) {
 		this.address = address;
 		this.lastCommit = new Date();
-		this.lastMenu = 0;
+		this.setLastMenu("session");
 	}
 	
 	public String getAddress() {
@@ -26,10 +26,10 @@ public class Session implements Serializable {
 	public void setLastCommit(Date lastCommit) {
 		this.lastCommit = lastCommit;
 	}
-	public int getLastMenu() {
+	public String getLastMenu() {
 		return lastMenu;
 	}
-	public void setLastMenu(int lastMenu) {
+	public void setLastMenu(String lastMenu) {
 		this.lastMenu = lastMenu;
 	}
 }

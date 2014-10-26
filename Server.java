@@ -78,6 +78,9 @@ public class Server extends UnicastRemoteObject {
 		}		
 	
 		try {
+			RMIClient dataServer = new RMIClient("localhost", 7000);
+			System.out.println(dataServer.getSession("localhost"));
+			
 			if(host1)
 				listenSocket = new ServerSocket(tcpPort2);
 			else
@@ -112,10 +115,10 @@ class Connection extends Thread {
 	}
 	
 	public void run() {
-		String responseLine;
 		try {
-			while((responseLine = in.readUTF()) != null) {
-				System.out.println(responseLine);
+			while(true) {
+				Menu.session(in, out);
+				Menu.login(in, out);
 			}
 		} catch(IOException e) {
 			System.err.println("Lost connection");

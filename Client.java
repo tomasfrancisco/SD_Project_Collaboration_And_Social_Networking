@@ -85,7 +85,7 @@ public class Client extends Thread {
 		String responseLine;
 		while(true) {
 			try {				
-				responseLine = inputLine.readLine().trim();
+				responseLine = inputLine.readLine();
 				synchronized (closed) {
 					if(closed.equals("true"))
 						synchronized (this) {

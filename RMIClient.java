@@ -1,5 +1,6 @@
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
+import java.rmi.RemoteException;
 
 class RMIClient extends Thread {
 	private String serverIP;
@@ -18,13 +19,16 @@ class RMIClient extends Thread {
 		// code downloading can take place
 		System.getProperties().put("java.security.policy", "policy.all");
 		System.setSecurityManager(new RMISecurityManager());
-
+		
 		try {
 			rmiServer = (RMIInterface) Naming.lookup("rmi://" + serverIP + ":" + port + "/" + remoteObjectName);
-			rmiServer.printOnServer("I'm the RMI Client");	
 		}
 		catch(Exception ex) {
-			System.out.println("Exception RMIClient.init: " + ex.getMessage());
+			ex.printStackTrace();
 		}
+	}
+	
+	public Session getSession(String address) throws RemoteException {
+		return rmiServer.getSession(address);
 	}
 }
